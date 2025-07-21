@@ -16,25 +16,29 @@ const elements = {
     progressBar: document.getElementById('progress-bar'),
     progressLabel: document.getElementById('progress-label'),
     logArea: document.getElementById('log-area'),
+    logWrapper: document.getElementById('log-wrapper'), // O contentor da área de log
+    robotAnimation: document.getElementById('robot-animation'), // A animação do robô
 };
 
 // --- Funções de Atualização da UI ---
 
 /**
- * Adiciona uma mensagem de log à área de logs na tela.
+ * Adiciona uma mensagem de log à área de logs na tela e garante o auto-scroll.
  * @param {string} message - A mensagem a ser exibida.
  * @param {string} level - O nível do log (e.g., 'info', 'error', 'warning').
  */
 function addLog(message, level = 'info') {
-    if (elements.logArea.innerHTML === 'Logs da execução aparecerão aqui...') {
+    if (elements.logArea.innerHTML.includes('Logs da execução aparecerão aqui...')) {
         elements.logArea.innerHTML = '';
     }
     const logEntry = document.createElement('div');
-    logEntry.className = `log-${level}`; // Aplica a classe CSS para a cor
+    logEntry.className = `log-${level}`;
     logEntry.textContent = message;
     elements.logArea.appendChild(logEntry);
-    // Rola para o final da área de logs
-    elements.logArea.scrollTop = elements.logArea.scrollHeight;
+    
+    // *** AJUSTE DO AUTO-SCROLL ***
+    // Rola o contentor para o final para mostrar sempre a última mensagem.
+    elements.logWrapper.scrollTop = elements.logWrapper.scrollHeight;
 }
 
 /**
@@ -51,7 +55,7 @@ function updateProgress(current, total, message) {
 }
 
 /**
- * Habilita ou desabilita os botões e campos de entrada.
+ * Habilita ou desabilita os controlos da UI e a animação do robô.
  * @param {boolean} isEnabled - True para habilitar, false para desabilitar.
  */
 function setControlsEnabled(isEnabled) {
@@ -62,12 +66,18 @@ function setControlsEnabled(isEnabled) {
     
     const inputs = [elements.cnpj, elements.obra, elements.cpf, elements.senha];
     inputs.forEach(input => input.disabled = !isEnabled);
+
+    // Mostra ou esconde a animação do robô
+    if (isEnabled) {
+        elements.robotAnimation.classList.add('hidden');
+    } else {
+        elements.robotAnimation.classList.remove('hidden');
+    }
 }
 
 
-// --- Event Listeners para Interação do Usuário ---
+// --- Event Listeners para Interação do Utilizador ---
 
-// Botão para selecionar o arquivo Excel
 elements.selectExcelBtn.addEventListener('click', async () => {
     const filePath = await window.electronAPI.selectExcelFile();
     if (filePath) {
@@ -75,7 +85,6 @@ elements.selectExcelBtn.addEventListener('click', async () => {
     }
 });
 
-// Botão para selecionar a pasta raiz
 elements.selectFolderBtn.addEventListener('click', async () => {
     const folderPath = await window.electronAPI.selectRootFolder();
     if (folderPath) {
@@ -83,14 +92,11 @@ elements.selectFolderBtn.addEventListener('click', async () => {
     }
 });
 
-// Botão de "Sobre"
 elements.aboutBtn.addEventListener('click', () => {
     window.electronAPI.showAboutDialog();
 });
 
-// Botão para iniciar a automação
 elements.startBtn.addEventListener('click', () => {
-    // Coleta todos os dados dos campos de entrada
     const config = {
         CNPJ_EMPRESA: elements.cnpj.value,
         CODIGO_OBRA: elements.obra.value,
@@ -100,7 +106,6 @@ elements.startBtn.addEventListener('click', () => {
         pasta_raiz_motoristas: elements.rootFolder.value,
     };
 
-    // Validação simples para garantir que todos os campos estão preenchidos
     for (const key in config) {
         if (!config[key]) {
             addLog(`ERRO: O campo "${key}" é obrigatório.`, 'error');
@@ -109,30 +114,30 @@ elements.startBtn.addEventListener('click', () => {
         }
     }
 
-    // Desabilita os controles e inicia o processo
     setControlsEnabled(false);
     addLog('Iniciando automação...', 'info_final');
     updateProgress(0, 0, 'Iniciando...');
     
-    // Envia a configuração para o processo principal do Electron
     window.electronAPI.startAutomation(config);
 });
 
 
-// --- Handlers para Eventos Vindos do Processo Principal (Python) ---
+// --- Handlers para Eventos Vindos do Processo Principal (Python e Atualizações) ---
 
-// Ouve por novas mensagens de log
 window.electronAPI.onLogMessage((_event, { message, level }) => {
     addLog(message, level);
 });
 
-// Ouve por atualizações na barra de progresso
 window.electronAPI.onProgressUpdate((_event, { current, total, message }) => {
     updateProgress(current, total, message);
 });
 
-// Ouve pelo sinal de que a automação terminou
 window.electronAPI.onAutomationFinished(() => {
     addLog('Automação finalizada.', 'info_final');
     setControlsEnabled(true);
+});
+
+// Ouve por mensagens do sistema de auto-update
+window.electronAPI.onUpdateMessage((_event, { message, level }) => {
+    addLog(`[UPDATE] ${message}`, level || 'info');
 });

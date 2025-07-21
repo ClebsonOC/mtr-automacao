@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Content Security Policy: Permite scripts inline e locais -->
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
     <title>Automação MTR INEA</title>
     <link rel="stylesheet" href="style.css">
@@ -13,7 +12,7 @@
         <header>
             <img src="logo_inea.jpg" alt="Logo INEA" class="logo">
             <h1>Automação MTR INEA</h1>
-            <p class="version">Versão Electron 2.1</p>
+            <p class="version">Versão 2.2.0</p>
         </header>
 
         <main>
@@ -79,14 +78,37 @@
                     </div>
                     <div id="progress-label">0/0 (0%)</div>
                 </div>
-                <div class="log-area-wrapper">
+                
+                <!-- Animação do Robô -->
+                <div id="robot-animation" class="robot-container hidden">
+                    <svg class="robot" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <g class="robot-body">
+                            <rect class="body-shape" x="30" y="40" width="40" height="35" rx="5"/>
+                            <rect class="eye" x="42" y="50" width="8" height="8" rx="2"/>
+                            <rect class="eye" x="58" y="50" width="8" height="8" rx="2"/>
+                            <line class="antenna" x1="50" y1="40" x2="50" y2="30"/>
+                            <circle class="antenna-tip" cx="50" cy="28" r="3"/>
+                        </g>
+                        <g class="left-arm">
+                            <line x1="30" y1="50" x2="15" y2="60"/>
+                            <circle cx="12" cy="62" r="4"/>
+                        </g>
+                        <g class="right-arm">
+                            <line x1="70" y1="50" x2="85" y2="60"/>
+                            <circle cx="88" cy="62" r="4"/>
+                        </g>
+                    </svg>
+                    <span class="robot-text">A automatizar...</span>
+                </div>
+                
+                <div class="log-area-wrapper" id="log-wrapper">
                     <pre id="log-area">Logs da execução aparecerão aqui...</pre>
                 </div>
             </div>
         </main>
 
         <footer>
-            <p>Desenvolvido por Clebson de Oliveira Correia</p>
+            <p>Desenvolvido por oliveiraclebson007@gmail.com</p>
         </footer>
     </div>
 

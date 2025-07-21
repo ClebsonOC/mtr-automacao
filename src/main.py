@@ -1,9 +1,20 @@
 import sys
+import os
 import json
 import time
-import os
 
-# Importa de outros módulos do projeto
+# --- CORREÇÃO CRUCIAL ---
+# Adiciona o diretório onde este script (main.py) está localizado ao path do Python.
+# Isto garante que, mesmo quando o programa está instalado e é executado de um
+# local diferente (ex: C:\Program Files\...), o Python consegue encontrar
+# os outros ficheiros .py (config_mtr, file_ops, etc.) que estão na mesma pasta.
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+# --- FIM DA CORREÇÃO ---
+
+
+# Agora, as importações locais irão funcionar corretamente
 from config_mtr import CONFIG, log_message
 from file_ops import (
     carregar_planilha, tentar_mover_arquivos_da_pasta_temporaria_pendentes,
@@ -20,12 +31,9 @@ from selenium.common.exceptions import WebDriverException
 def run_automation_logic():
     """
     Função principal que executa toda a lógica de automação.
-    Adaptada para rodar sem interface gráfica direta.
     """
-    # Acessa e modifica o navegador_global de config_mtr
     config_module = __import__('config_mtr')
 
-    # Cria a pasta de download temporária se não existir
     if not os.path.exists(CONFIG["pasta_download_temporaria"]):
         try:
             os.makedirs(CONFIG["pasta_download_temporaria"])
@@ -51,13 +59,11 @@ def run_automation_logic():
             log_message("Todos os MTRs já estão processados. Encerrando.", "info_final")
             break
         
-        # Lógica para iniciar ou verificar o navegador
         reiniciar_nav = False
         if config_module.navegador_global is None:
             reiniciar_nav = True
         else:
             try:
-                # Verifica se o navegador ainda está ativo
                 _ = config_module.navegador_global.window_handles
             except WebDriverException:
                 log_message("Navegador não está respondendo. Reiniciando.", "warning")
@@ -77,7 +83,6 @@ def run_automation_logic():
                 time.sleep(5)
                 continue
         
-        # Processamento principal
         if not processar_downloads_para_pasta_temp(config_module.navegador_global, planilha_df):
             log_message("Ocorreu um problema crítico durante o download que requer o reinício do navegador.", "error")
             if config_module.navegador_global:
@@ -107,7 +112,6 @@ def run_automation_logic():
             log_message("Verificação final falhou. Alguns arquivos não foram encontrados. Reiniciando ciclo.", "warning")
             time.sleep(3)
             
-    # Bloco final para garantir que o navegador seja fechado
     if config_module.navegador_global:
         try:
             log_message("Encerrando navegador...")
@@ -121,23 +125,17 @@ def run_automation_logic():
 
 if __name__ == "__main__":
     try:
-        # Lê a configuração enviada pelo Electron via stdin
         input_data = sys.stdin.read()
         config_from_electron = json.loads(input_data)
         
-        # Atualiza o dicionário de configuração global
         CONFIG.update(config_from_electron)
         
-        # Define o caminho da pasta de downloads temporária
         CONFIG["pasta_download_temporaria"] = os.path.join(CONFIG["pasta_raiz_motoristas"], "temp_downloads")
 
-        # Inicia a lógica de automação
         run_automation_logic()
 
     except Exception as e:
-        # Envia uma mensagem de erro geral se algo falhar na inicialização
-        log_message(f"ERRO FATAL NO SCRIPT PYTHON: {e}", "error")
-        # Adiciona um traceback para facilitar a depuração
         import traceback
+        log_message(f"ERRO FATAL NO SCRIPT PYTHON: {e}", "error")
         log_message(traceback.format_exc(), "error")
 

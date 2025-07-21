@@ -15,4 +15,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onLogMessage: (callback) => ipcRenderer.on('log-message', callback),
     onProgressUpdate: (callback) => ipcRenderer.on('progress-update', callback),
     onAutomationFinished: (callback) => ipcRenderer.on('automation-finished', callback),
+    onUpdateMessage: (callback) => ipcRenderer.on('update-message', callback), // NOVO
 });

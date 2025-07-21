@@ -261,6 +261,79 @@ input[readonly] {
     color: var(--secondary-color);
 }
 
+/* Animação do Robô */
+.robot-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0;
+    opacity: 1;
+    transition: opacity 0.3s ease, height 0.3s ease;
+    overflow: hidden;
+    height: 120px;
+}
+
+.robot-container.hidden {
+    opacity: 0;
+    height: 0;
+    padding: 0;
+}
+
+.robot {
+    width: 80px;
+    height: 80px;
+}
+
+.robot .robot-body, .robot .left-arm, .robot .right-arm {
+    stroke: var(--secondary-color);
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.robot .eye {
+    fill: var(--secondary-color);
+}
+
+.robot .antenna-tip {
+    fill: var(--primary-color);
+    animation: blink 1.5s infinite;
+}
+
+.robot .left-arm {
+    animation: wave-left 2s infinite ease-in-out;
+    transform-origin: 30px 50px;
+}
+
+.robot .right-arm {
+    animation: wave-right 2s infinite ease-in-out 0.2s;
+    transform-origin: 70px 50px;
+}
+
+.robot-text {
+    margin-top: 0.5rem;
+    font-weight: 500;
+    color: var(--secondary-color);
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+@keyframes wave-left {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-20deg); }
+}
+
+@keyframes wave-right {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(20deg); }
+}
+
+
 /* Área de Log */
 .log-area-wrapper {
     background-color: var(--log-background);
@@ -270,6 +343,7 @@ input[readonly] {
     height: 300px;
     overflow-y: auto;
     border: 1px solid #334155;
+    transition: height 0.3s ease;
 }
 
 #log-area {
