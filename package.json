@@ -1,0 +1,21 @@
+{
+  "name": "automacao-mtr-electron",
+  "version": "2.0.0",
+  "description": "Automação de Manifesto de Transporte de Resíduos (MTR INEA) com interface Electron.",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "electron",
+    "python",
+    "selenium",
+    "automation"
+  ],
+  "author": "Clebson de Oliveira Correia",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}

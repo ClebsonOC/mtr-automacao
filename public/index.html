@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Content Security Policy: Permite scripts inline e locais -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <title>Automação MTR INEA</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="logo_inea.jpg" alt="Logo INEA" class="logo">
+            <h1>Automação MTR INEA</h1>
+            <p class="version">Versão Electron 2.1</p>
+        </header>
+
+        <main>
+            <!-- Card de Configuração -->
+            <div class="card" id="config-card">
+                <div class="card-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2.4l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2.4l.15.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <h2>Configuração e Acesso</h2>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="cnpj">CNPJ Empresa</label>
+                        <input type="text" id="cnpj" placeholder="00.000.000/0000-00">
+                    </div>
+                    <div class="form-group">
+                        <label for="obra">Código Obra</label>
+                        <input type="text" id="obra" placeholder="Código da obra">
+                    </div>
+                    <div class="form-group">
+                        <label for="cpf">CPF Usuário</label>
+                        <input type="text" id="cpf" placeholder="000.000.000-00">
+                    </div>
+                    <div class="form-group">
+                        <label for="senha">Senha Usuário</label>
+                        <input type="password" id="senha" placeholder="••••••••••">
+                    </div>
+                </div>
+                 <div class="form-group-full">
+                    <label for="excel-path">Planilha Excel</label>
+                    <div class="file-input-group">
+                        <input type="text" id="excel-path" placeholder="Selecione o ficheiro da planilha" readonly>
+                        <button id="select-excel-btn" class="btn-secondary">Selecionar...</button>
+                    </div>
+                </div>
+                <div class="form-group-full">
+                    <label for="root-folder">Pasta Raiz para Downloads</label>
+                    <div class="file-input-group">
+                        <input type="text" id="root-folder" placeholder="Selecione a pasta de destino" readonly>
+                        <button id="select-folder-btn" class="btn-secondary">Selecionar...</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="action-buttons">
+                <button id="start-btn" class="btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Iniciar Automação
+                </button>
+                <button id="about-btn" class="btn-tertiary">Sobre</button>
+            </div>
+
+            <!-- Card de Status -->
+            <div class="card" id="status-card">
+                 <div class="card-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                    <h2>Status da Execução</h2>
+                </div>
+                <div class="progress-container">
+                    <div id="progress-message">Aguardando início...</div>
+                    <div class="progress-bar-background">
+                        <div class="progress-bar-foreground" id="progress-bar" style="width: 0%;"></div>
+                    </div>
+                    <div id="progress-label">0/0 (0%)</div>
+                </div>
+                <div class="log-area-wrapper">
+                    <pre id="log-area">Logs da execução aparecerão aqui...</pre>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Desenvolvido por Clebson de Oliveira Correia</p>
+        </footer>
+    </div>
+
+    <!-- Script do Renderer do Electron -->
+    <script src="renderer.js"></script>
+</body>
+</html>
