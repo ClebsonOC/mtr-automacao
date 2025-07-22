@@ -4,6 +4,9 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 
+// Variável para verificar se estamos em ambiente de desenvolvimento ou produção (empacotado)
+const isDev = !app.isPackaged;
+
 let mainWindow;
 let pythonProcess = null;
 
@@ -27,8 +30,10 @@ function createWindow() {
     // Carrega o arquivo HTML principal
     mainWindow.loadFile('public/index.html');
     
-    // Opcional: Abre o DevTools para depuração
-    // mainWindow.webContents.openDevTools();
+    // Opcional: Abre o DevTools para depuração apenas em desenvolvimento
+    if (isDev) {
+        mainWindow.webContents.openDevTools();
+    }
 }
 
 // --- Ciclo de Vida da Aplicação ---
@@ -59,11 +64,15 @@ app.on('window-all-closed', () => {
 
 // Ouve o evento 'start-automation' vindo do renderer.js
 ipcMain.on('start-automation', (event, config) => {
-    // TODO: Ajustar o caminho para o executável Python portátil
-    // Exemplo para desenvolvimento: 'python'
-    // Exemplo para produção com python portátil: path.join(__dirname, 'vendor', 'python-portable', 'python.exe')
-    const pythonExecutable = 'python'; // Mudar para o caminho do python portátil no build
-    const scriptPath = path.join(__dirname, 'src', 'main.py');
+    // Caminho dinâmico para o executável do Python portátil
+    const pythonExecutable = isDev
+      ? path.join(__dirname, 'vendor', 'python-portable', 'python.exe') // Caminho para desenvolvimento
+      : path.join(process.resourcesPath, 'app.asar.unpacked', 'vendor', 'python-portable', 'python.exe'); // Caminho para produção
+
+    // Caminho dinâmico para o script Python principal
+    const scriptPath = isDev 
+      ? path.join(__dirname, 'src', 'main.py') // Caminho para desenvolvimento
+      : path.join(process.resourcesPath, 'app.asar.unpacked', 'src', 'main.py'); // Caminho para produção
 
     // Inicia o script Python como um processo filho
     pythonProcess = spawn(pythonExecutable, [scriptPath]);
