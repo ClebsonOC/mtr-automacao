@@ -3,37 +3,32 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
-const { autoUpdater } = require('electron-updater');
-const log = require('electron-log'); // Importa o electron-log
 
 let mainWindow;
 let pythonProcess = null;
-
-// Configuração de logs para o autoUpdater
-autoUpdater.logger = log;
-autoUpdater.logger.transports.file.level = "info";
-log.info('App starting...');
 
 /**
  * Cria a janela principal da aplicação.
  */
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 900,
+        width: 850,
         height: 950,
         webPreferences: {
+            // Anexa o script de 'preload' à janela para expor APIs de forma segura
             preload: path.join(__dirname, 'preload.js'),
+            // É recomendado manter contextIsolation e nodeIntegration desabilitados por segurança
             contextIsolation: true,
             nodeIntegration: false,
         },
-        icon: path.join(__dirname, 'public/logo_inea.jpg')
+        icon: path.join(__dirname, 'public/logo_inea.jpg') // Adiciona o ícone
     });
 
+    // Carrega o arquivo HTML principal
     mainWindow.loadFile('public/index.html');
     
-    mainWindow.once('ready-to-show', () => {
-        autoUpdater.checkForUpdatesAndNotify();
-    });
+    // Opcional: Abre o DevTools para depuração
+    // mainWindow.webContents.openDevTools();
 }
 
 // --- Ciclo de Vida da Aplicação ---
@@ -41,6 +36,7 @@ function createWindow() {
 app.whenReady().then(() => {
     createWindow();
 
+    // Handler para macOS: recria a janela se o app estiver no dock
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
@@ -48,88 +44,62 @@ app.whenReady().then(() => {
     });
 });
 
+// Encerra a aplicação quando todas as janelas forem fechadas (exceto no macOS)
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
     }
+    // Garante que o processo python seja encerrado ao fechar o app
     if (pythonProcess) {
         pythonProcess.kill();
     }
 });
 
-// --- Handlers do Auto-Updater ---
-
-autoUpdater.on('update-available', () => {
-    mainWindow.webContents.send('update-message', { message: 'Nova atualização disponível. A descarregar...' });
-});
-
-autoUpdater.on('update-downloaded', () => {
-    mainWindow.webContents.send('update-message', { message: 'Atualização descarregada. Será instalada ao reiniciar a aplicação.' });
-});
-
-autoUpdater.on('error', (err) => {
-    mainWindow.webContents.send('update-message', { message: `Erro na atualização: ${err.toString()}`, level: 'error' });
-});
-
-
 // --- Comunicação Inter-Processos (IPC) ---
 
+// Ouve o evento 'start-automation' vindo do renderer.js
 ipcMain.on('start-automation', (event, config) => {
-    const isDev = !app.isPackaged;
+    // TODO: Ajustar o caminho para o executável Python portátil
+    // Exemplo para desenvolvimento: 'python'
+    // Exemplo para produção com python portátil: path.join(__dirname, 'vendor', 'python-portable', 'python.exe')
+    const pythonExecutable = 'python'; // Mudar para o caminho do python portátil no build
+    const scriptPath = path.join(__dirname, 'src', 'main.py');
 
-    const pythonExecutable = isDev
-        ? path.join(__dirname, 'vendor', 'python-portable', 'python.exe')
-        : path.join(process.resourcesPath, 'vendor', 'python-portable', 'python.exe');
+    // Inicia o script Python como um processo filho
+    pythonProcess = spawn(pythonExecutable, [scriptPath]);
 
-    const pythonScriptsDir = isDev
-        ? path.join(__dirname, 'src')
-        : path.join(process.resourcesPath, 'src');
-
-    const scriptPath = path.join(pythonScriptsDir, 'main.py');
-
-    try {
-        require('fs').accessSync(pythonExecutable);
-    } catch (e) {
-        mainWindow.webContents.send('log-message', { 
-            message: `[CRITICAL ERROR]: Python executable not found at ${pythonExecutable}.`, 
-            level: 'error' 
-        });
-        mainWindow.webContents.send('automation-finished');
-        return;
-    }
-
-    // *** CORREÇÃO IMPORTANTE AQUI ***
-    // Adicionamos a opção `cwd` (Current Working Directory) para dizer ao Python
-    // para executar a partir da pasta 'src'. Isto resolve o 'ModuleNotFoundError'.
-    pythonProcess = spawn(pythonExecutable, [scriptPath], {
-        cwd: pythonScriptsDir
-    });
-
+    // Envia a configuração para o script Python via stdin
     pythonProcess.stdin.write(JSON.stringify(config));
     pythonProcess.stdin.end();
 
+    // Ouve a saída padrão (stdout) do processo Python
     pythonProcess.stdout.on('data', (data) => {
         const output = data.toString();
+        // Processa cada linha JSON recebida
         output.split('\n').forEach(line => {
             if (line) {
                 try {
                     const jsonData = JSON.parse(line);
+                    // Envia os dados para a janela (renderer) com base no tipo
                     if (jsonData.type === 'log') {
                         mainWindow.webContents.send('log-message', jsonData.payload);
                     } else if (jsonData.type === 'progress') {
                         mainWindow.webContents.send('progress-update', jsonData.payload);
                     }
                 } catch (e) {
+                    // Se não for JSON, trata como um log de sistema
                     mainWindow.webContents.send('log-message', { message: `[Python Raw]: ${line}`, level: 'warning' });
                 }
             }
         });
     });
 
+    // Ouve a saída de erro (stderr) do processo Python
     pythonProcess.stderr.on('data', (data) => {
         mainWindow.webContents.send('log-message', { message: `[Python Error]: ${data.toString()}`, level: 'error' });
     });
 
+    // Ouve o evento de finalização do processo Python
     pythonProcess.on('close', (code) => {
         mainWindow.webContents.send('log-message', { message: `Script Python finalizado com código ${code}.`, level: 'info' });
         mainWindow.webContents.send('automation-finished');
@@ -160,7 +130,7 @@ ipcMain.handle('dialog:showAbout', () => {
     dialog.showMessageBox(mainWindow, {
         type: 'info',
         title: 'Sobre a Automação MTR',
-        message: 'Automação MTR INEA v2.2.1 (Electron)',
+        message: 'Automação MTR INEA v2.0 (Electron)',
         detail: 'Desenvolvido por: Clebson de Oliveira Correia\nEmail: oliveiraclebson007@gmail.com'
     });
 });
